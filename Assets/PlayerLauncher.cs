@@ -7,6 +7,7 @@ public class PlayerLauncher : MonoBehaviour
     public Rigidbody2D ball;
     public CircleCollider2D ballCollider;
     public Transform arrow;
+    public FailUIController failUIController;
 
     public enum LengthAxis { X, Y }
 
@@ -39,6 +40,8 @@ public class PlayerLauncher : MonoBehaviour
     public float rearmSpeedThreshold = 0.05f;
     public float rearmSettleTime = 0.2f;
     public Key rearmKey = Key.R;
+
+    public int shotCount = 5; //shot counter max allowed
 
     // Input (code-bound)
     private InputAction aimPowerAction;
@@ -75,7 +78,8 @@ public class PlayerLauncher : MonoBehaviour
         if (!enabled || !gameObject.activeInHierarchy) return;
 
         Vector2 ap = aimPowerAction.ReadValue<Vector2>();
-        float dt = Time.unscaledDeltaTime;
+        //float dt = Time.unscaledDeltaTime; 
+        float dt = Time.deltaTime;// adapts for framerate across different browsers and devices
 
         if (fired)
         {
@@ -152,6 +156,8 @@ public class PlayerLauncher : MonoBehaviour
         ball.angularVelocity = 0f;
         ball.AddForce(dir * power, ForceMode2D.Impulse);
 
+        shotCount--;
+
         fired = true;
         stoppedTimer = 0f;
         if (hideArrowAfterFire && arrow) arrow.gameObject.SetActive(false);
@@ -179,6 +185,29 @@ public class PlayerLauncher : MonoBehaviour
 
     public void ArmAgain(Vector3 newBallPos, float newAngle = 0f, float newPower = 5f)
     {
+        // Check if shot count is depleted - trigger fail UI if so
+        if (shotCount <= 0)
+        {
+            // Find FailUIController if not assigned
+            if (failUIController == null)
+            {
+                failUIController = FindFirstObjectByType<FailUIController>();
+            }
+            
+            // Show fail UI if available
+            if (failUIController != null)
+            {
+                failUIController.Show();
+            }
+            else
+            {
+                Debug.LogWarning("[PlayerLauncher] FailUIController not found - cannot show fail UI");
+            }
+            
+            // Don't rearm if no shots remaining
+            return;
+        }
+        
         fired = false;
         stoppedTimer = 0f;
         ball.position = newBallPos;
@@ -186,5 +215,13 @@ public class PlayerLauncher : MonoBehaviour
         power = Mathf.Clamp(newPower, minPower, maxPower);
         if (arrow) arrow.gameObject.SetActive(true);
         UpdateArrow();
+    }
+
+    /// <summary>
+    /// Reset the shot counter to zero. Call this when restarting a level or starting fresh.
+    /// </summary>
+    public void ResetShotCount()
+    {
+        shotCount = 5; /// reset to max allowed
     }
 }
