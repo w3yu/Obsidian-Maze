@@ -11,14 +11,25 @@ public class WinUIController : MonoBehaviour
     public UnityEvent onNextLevel;
 
     CanvasGroup cg;
+    private TMPro.TextMeshProUGUI[] cachedTextComponents;
 
     void Awake()
     {
+        Debug.Log($"[WinUIController] Awake called on {gameObject.name}");
+        
         if (rootPanel == null) rootPanel = gameObject;
 
         // Ensure there is a CanvasGroup to control visibility without disabling the object
         cg = rootPanel.GetComponent<CanvasGroup>();
         if (!cg) cg = rootPanel.AddComponent<CanvasGroup>();
+
+        // Cache and log all TextMeshProUGUI children
+        cachedTextComponents = rootPanel.GetComponentsInChildren<TMPro.TextMeshProUGUI>(true);
+        Debug.Log($"[WinUIController] Found {cachedTextComponents.Length} TextMeshProUGUI components in children");
+        foreach (var text in cachedTextComponents)
+        {
+            Debug.Log($"[WinUIController] Child TextMeshProUGUI: {text.name} (ID: {text.GetInstanceID()})");
+        }
 
         // Start hidden regardless of initial inspector state
         rootPanel.SetActive(true); // keep active so lifecycle runs
@@ -27,12 +38,14 @@ public class WinUIController : MonoBehaviour
 
     public void Show()
     {
+        Debug.Log("[WinUIController] Show() called");
         SetVisible(true);
         Time.timeScale = 0f;
     }
 
     public void OnRetry()
     {
+        Debug.Log("[WinUIController] OnRetry() called - reloading scene");
         Time.timeScale = 1f;
         var scene = SceneManager.GetActiveScene();
         SceneManager.LoadScene(scene.buildIndex);
@@ -41,7 +54,7 @@ public class WinUIController : MonoBehaviour
     public void OnNextLevel()
     {
         onNextLevel?.Invoke();
-        Debug.Log("[WinUI] Next Level clicked – wire up 'onNextLevel' in Inspector.");
+        Debug.Log("[WinUI] Next Level clicked â€“ wire up 'onNextLevel' in Inspector.");
     }
 
     // --- helpers ---
@@ -50,7 +63,43 @@ public class WinUIController : MonoBehaviour
         cg.alpha = visible ? 1f : 0f;
         cg.interactable = visible;
         cg.blocksRaycasts = visible;
+        
+        // Also disable raycast targets on all TextMeshProUGUI components when hidden
+        if (cachedTextComponents != null)
+        {
+            foreach (var text in cachedTextComponents)
+            {
+                if (text != null && !ReferenceEquals(text, null))
+                {
+                    text.raycastTarget = visible;
+                }
+            }
+        }
     }
 
     void HideInstant() => SetVisible(false);
+    
+    void OnDestroy()
+    {
+        Debug.Log($"[WinUIController] OnDestroy called on {gameObject.name}");
+        
+        // Ensure all text components have raycasting disabled before destruction
+        if (cachedTextComponents != null)
+        {
+            foreach (var text in cachedTextComponents)
+            {
+                if (text != null && !ReferenceEquals(text, null))
+                {
+                    text.raycastTarget = false;
+                }
+            }
+        }
+        
+        // Check for any remaining TextMeshProUGUI components
+        var textComponents = rootPanel?.GetComponentsInChildren<TMPro.TextMeshProUGUI>(true);
+        if (textComponents != null)
+        {
+            Debug.Log($"[WinUIController] {textComponents.Length} TextMeshProUGUI components still present on destroy");
+        }
+    }
 }
