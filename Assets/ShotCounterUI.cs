@@ -8,14 +8,14 @@ public class ShotCounterUI : MonoBehaviour
     public TextMeshProUGUI shotCountText;
 
     [Header("Display Settings")]
-    public string displayFormat = "Shots: {0}\nBonuses: {1}\nPenalties: {2}";
+    public string displayFormat = "Shots Remaining: {0}\nBonuses: {1}\nPenalties: {2}\nScore: {3}";
 
     void Start()
     {
         Debug.Log($"[ShotCounterUI] Start called on {gameObject.name}");
         
         // Ensure the display format is correct
-        displayFormat = "Shots: {0}\nBonuses: {1}\nPenalties: {2}";
+        displayFormat = "Shots Remaining: {0}\nBonuses: {1}\nPenalties: {2}\nScore: {3}";
         
         // Try to find PlayerLauncher if not assigned
         if (playerLauncher == null)
@@ -57,10 +57,12 @@ public class ShotCounterUI : MonoBehaviour
         {
             try
             {
+                int score = playerLauncher.shotCount * 100;
                 shotCountText.text = string.Format(displayFormat, 
                     playerLauncher.shotCount,
                     playerLauncher.bonusesCollected,
-                    playerLauncher.penaltiesHit);
+                    playerLauncher.penaltiesHit,
+                    score);
             }
             catch (MissingReferenceException e)
             {
