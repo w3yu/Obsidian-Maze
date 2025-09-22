@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 public class PlayerLauncher : MonoBehaviour
 {
@@ -8,6 +9,12 @@ public class PlayerLauncher : MonoBehaviour
     public CircleCollider2D ballCollider;
     public Transform arrow;
     public FailUIController failUIController;
+    
+    [Header("Audio")]
+    public AudioSource audioSource;
+    public AudioClip fireSound;
+    [Range(0f, 1f)]
+    public float fireSoundVolume = 1f;
 
     public enum LengthAxis { X, Y }
 
@@ -44,6 +51,9 @@ public class PlayerLauncher : MonoBehaviour
     public int shotCount = 5; //shot counter max allowed
     public int bonusesCollected = 0; // Track number of bonuses collected
     public int penaltiesHit = 0; // Track number of penalties hit
+    
+    // Store the initial shot count for this level
+    private int initialShotCount = 5;
 
     // Input (code-bound)
     private InputAction aimPowerAction;
@@ -58,6 +68,17 @@ public class PlayerLauncher : MonoBehaviour
         if (!ballCollider && ball) ballCollider = ball.GetComponent<CircleCollider2D>();
         if (arrow) baseScale = arrow.localScale;
         if (ball) { ball.gravityScale = 0f; ball.freezeRotation = true; }
+        
+        // Setup AudioSource if not assigned
+        if (audioSource == null)
+        {
+            audioSource = GetComponent<AudioSource>();
+            if (audioSource == null)
+            {
+                audioSource = gameObject.AddComponent<AudioSource>();
+                audioSource.playOnAwake = false;
+            }
+        }
 
         aimPowerAction = new InputAction("AimPower", InputActionType.Value, expectedControlType: "Vector2");
         aimPowerAction.AddCompositeBinding("2DVector")
@@ -70,6 +91,26 @@ public class PlayerLauncher : MonoBehaviour
 
         fireAction = new InputAction("Fire", InputActionType.Button, "<Keyboard>/space");
         fireAction.AddBinding("<Gamepad>/buttonSouth");
+    }
+
+    void Start()
+    {
+        // Set initial shot count based on current scene - do this in Start() to override Inspector values
+        string sceneName = SceneManager.GetActiveScene().name;
+        Debug.Log($"[PlayerLauncher] Current scene name: '{sceneName}'");
+        
+        if (sceneName == "level 2")
+        {
+            initialShotCount = 20;
+            shotCount = 20;
+            Debug.Log("[PlayerLauncher] Set shot count to 15 for level 2");
+        }
+        else // Tutorial_level or any other scene
+        {
+            initialShotCount = 5;
+            shotCount = 5;
+            Debug.Log($"[PlayerLauncher] Set shot count to 5 for scene: {sceneName}");
+        }
     }
 
     void OnEnable() { aimPowerAction.Enable(); fireAction.Enable(); }
@@ -153,6 +194,12 @@ public class PlayerLauncher : MonoBehaviour
     {
         if (!ball || fired) return;
 
+        // Play fire sound effect
+        if (audioSource != null && fireSound != null)
+        {
+            audioSource.PlayOneShot(fireSound, fireSoundVolume);
+        }
+
         Vector2 dir = AngleToDir(angleDeg);
         ball.linearVelocity = Vector2.zero;
         ball.angularVelocity = 0f;
@@ -220,11 +267,11 @@ public class PlayerLauncher : MonoBehaviour
     }
 
     /// <summary>
-    /// Reset the shot counter to zero. Call this when restarting a level or starting fresh.
+    /// Reset the shot counter to the initial value for this level. Call this when restarting a level or starting fresh.
     /// </summary>
     public void ResetShotCount()
     {
-        shotCount = 5; /// reset to max allowed
+        shotCount = initialShotCount; /// reset to level-specific max allowed
         bonusesCollected = 0;
         penaltiesHit = 0;
     }

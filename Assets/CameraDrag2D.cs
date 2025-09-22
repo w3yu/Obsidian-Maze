@@ -15,8 +15,11 @@ public class CameraDrag2D : MonoBehaviour
     [Header("Ball Following")]
     public bool followBall = true;
     public string ballTag = "Ball";
-    public float ballFollowThreshold = 0.3f;  // 30% up the screen
-    public float ballFallThreshold = 0.1f;    // 10% from the bottom of the screen
+    public float ballFollowThreshold = 0.15f;  // 15% from top (more aggressive following)
+    public float ballFallThreshold = 0.05f;    // 5% from bottom (keep ball more centered)
+    public float ballHorizontalFollowThreshold = 0.1f;  // Follow when ball is 10% from screen edges
+    public float followSmoothness = 8f;  // Faster camera response to prevent ball escaping
+    public float edgeBuffer = 0.02f;  // 2% safety buffer to ensure ball never leaves screen
     
     [Header("Bounds")]
     public bool clampToBounds = true;
@@ -38,8 +41,8 @@ public class CameraDrag2D : MonoBehaviour
         if (!cam) cam = Camera.main;
         if (cam) cam.orthographic = true;  // ensure 2D
         
-        // Set camera size to show full game width
-        SetCameraToFitWidth();
+        // Set fixed camera width (20% narrower than tutorial level)
+        SetFixedCameraWidth();
         
         // Find the ball
         GameObject ballObject = GameObject.FindGameObjectWithTag(ballTag);
@@ -47,58 +50,23 @@ public class CameraDrag2D : MonoBehaviour
     }
 
     void Start()
-{
+    {
         // Ensure camera is properly sized at start
-        SetCameraToFitWidth();
+        SetFixedCameraWidth();
     }
 
-
-    void SetCameraToFitWidth()
+    void SetFixedCameraWidth()
     {
-        // Auto-detect game width based on level bounds
-        float detectedWidth = AutoDetectGameWidth();
+        // Tutorial level width is approximately 20.5 units based on WorldBoundary scale
+        // Making it 20% narrower means showing 80% of that width
+        float tutorialLevelWidth = 20.5f;
+        float fixedCameraWidth = tutorialLevelWidth * 0.8f; // 16.4 units wide
         
-        // Calculate the orthographic size needed to show the full detected width
+        // Calculate the orthographic size needed to show the fixed width
         float aspect = (float)Screen.width / Screen.height;
-        cam.orthographicSize = detectedWidth / (2f * aspect);
+        cam.orthographicSize = fixedCameraWidth / (2f * aspect);
         
-        Debug.Log($"Auto-detected game width: {detectedWidth}, Camera orthographic size set to: {cam.orthographicSize}");
-    }
-
-    float AutoDetectGameWidth()
-    {
-        // Method 1: Use bounds collider if available
-        if (boundsCollider != null)
-        {
-            return boundsCollider.bounds.size.x;
-        }
-
-        // Method 2: Find all renderers and calculate bounds
-        Renderer[] allRenderers = FindObjectsOfType<Renderer>();
-        if (allRenderers.Length > 0)
-        {
-            Bounds combinedBounds = allRenderers[0].bounds;
-            foreach (Renderer renderer in allRenderers)
-            {
-                combinedBounds.Encapsulate(renderer.bounds);
-            }
-            return combinedBounds.size.x;
-        }
-
-        // Method 3: Find all colliders and calculate bounds
-        Collider2D[] allColliders = FindObjectsOfType<Collider2D>();
-        if (allColliders.Length > 0)
-        {
-            Bounds combinedBounds = allColliders[0].bounds;
-            foreach (Collider2D collider in allColliders)
-            {
-                combinedBounds.Encapsulate(collider.bounds);
-            }
-            return combinedBounds.size.x;
-        }
-
-        // Fallback: use a reasonable default
-        return 20f;
+        Debug.Log($"Fixed camera width: {fixedCameraWidth}, Camera orthographic size set to: {cam.orthographicSize}");
     }
 
 
@@ -157,16 +125,22 @@ public class CameraDrag2D : MonoBehaviour
         if (followBall && ballTransform)
         {
             Vector3 targetPosition = CalculateTargetCameraPosition();
-            cam.transform.position = targetPosition + dragOffset;
+            Vector3 desiredPosition = targetPosition + dragOffset;
+            
+            // Smooth camera movement
+            cam.transform.position = Vector3.Lerp(cam.transform.position, desiredPosition, Time.deltaTime * followSmoothness);
+            
+            // Apply modified bounds clamping that allows camera to reach edges for ball visibility
+            if (clampToBounds && boundsCollider) ClampToBoundsForBall();
         }
         else if (isDragging)
         {
             // If not following ball, use traditional drag behavior
             cam.transform.position += worldDelta;
+            
+            // Apply normal bounds clamping when not following ball
+            if (clampToBounds && boundsCollider) ClampToBounds();
         }
-
-        // Apply bounds clamping
-        if (clampToBounds && boundsCollider) ClampToBounds();
 
         // --- 4) optional zoom by mouse wheel ---
         if (allowZoom && Mouse.current != null)
@@ -177,7 +151,13 @@ public class CameraDrag2D : MonoBehaviour
                 // exponential zoom for smoothness
                 float factor = Mathf.Exp(scrollY * 0.001f * zoomSpeed);
                 cam.orthographicSize = Mathf.Clamp(cam.orthographicSize / factor, minOrthoSize, maxOrthoSize);
-                if (clampToBounds && boundsCollider) ClampToBounds();
+                if (clampToBounds && boundsCollider)
+                {
+                    if (followBall && ballTransform)
+                        ClampToBoundsForBall();
+                    else
+                        ClampToBounds();
+                }
             }
         }
     }
@@ -185,28 +165,11 @@ public class CameraDrag2D : MonoBehaviour
     Vector3 CalculateTargetCameraPosition()
     {
         Vector3 ballPos = ballTransform.position;
-        Vector3 currentCameraPos = cam.transform.position;
         
-        // Convert ball position to screen coordinates
-        Vector3 ballScreenPos = cam.WorldToViewportPoint(ballPos);
-        
-        // Check if ball is above the upper threshold (30% up the screen)
-        if (ballScreenPos.y >= ballFollowThreshold)
-        {
-            // Calculate where camera should be to keep ball at the upper threshold position
-            float targetY = ballPos.y - (cam.orthographicSize * 2f * ballFollowThreshold - cam.orthographicSize);
-            return new Vector3(currentCameraPos.x, targetY, currentCameraPos.z);
-        }
-        // Check if ball is below the lower threshold (10% from bottom)
-        else if (ballScreenPos.y < ballFallThreshold)
-        {
-            // Calculate where camera should be to keep ball at the lower threshold position
-            float targetY = ballPos.y - (cam.orthographicSize * 2f * ballFallThreshold - cam.orthographicSize);
-            return new Vector3(currentCameraPos.x, targetY, currentCameraPos.z);
-        }
-        
-        // If ball is within both thresholds, don't move camera vertically
-        return currentCameraPos;
+        // Simply follow the ball position directly
+        // The camera will center on the ball and follow it everywhere
+        // ClampToBoundsForBall will handle keeping the camera in valid bounds
+        return new Vector3(ballPos.x, ballPos.y, cam.transform.position.z);
     }
 
     bool IsMousePressed(MouseButton b)
@@ -232,5 +195,59 @@ public class CameraDrag2D : MonoBehaviour
         p.x = Mathf.Clamp(p.x, b.min.x + halfW, b.max.x - halfW);
         p.y = Mathf.Clamp(p.y, b.min.y + halfH, b.max.y - halfH);
         cam.transform.position = p;
+    }
+    
+    void ClampToBoundsForBall()
+    {
+        if (!boundsCollider || !ballTransform) return;
+
+        Bounds b = boundsCollider.bounds;
+        float halfH = cam.orthographicSize;
+        float halfW = halfH * cam.aspect;
+        
+        // Get ball position
+        Vector3 ballPos = ballTransform.position;
+        Vector3 camPos = cam.transform.position;
+        
+        // Calculate the camera bounds that would show the entire scene
+        float minCamX = b.min.x + halfW;
+        float maxCamX = b.max.x - halfW;
+        float minCamY = b.min.y + halfH;
+        float maxCamY = b.max.y - halfH;
+        
+        // If the ball is near the edges of the scene, allow the camera to go beyond normal bounds
+        // to keep the ball visible, but still prevent showing beyond the scene
+        
+        // Check if ball is near scene edges and adjust camera limits accordingly
+        float ballBuffer = 1f; // Distance from edge where we start adjusting camera
+        
+        // Horizontal adjustments
+        if (ballPos.x < b.min.x + ballBuffer)
+        {
+            // Ball is near left edge - allow camera to move further left
+            minCamX = b.min.x;
+        }
+        else if (ballPos.x > b.max.x - ballBuffer)
+        {
+            // Ball is near right edge - allow camera to move further right
+            maxCamX = b.max.x;
+        }
+        
+        // Vertical adjustments
+        if (ballPos.y < b.min.y + ballBuffer)
+        {
+            // Ball is near bottom edge - allow camera to move further down
+            minCamY = b.min.y;
+        }
+        else if (ballPos.y > b.max.y - ballBuffer)
+        {
+            // Ball is near top edge - allow camera to move further up
+            maxCamY = b.max.y;
+        }
+        
+        // Clamp camera position with adjusted bounds
+        camPos.x = Mathf.Clamp(camPos.x, minCamX, maxCamX);
+        camPos.y = Mathf.Clamp(camPos.y, minCamY, maxCamY);
+        cam.transform.position = camPos;
     }
 }
