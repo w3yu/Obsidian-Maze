@@ -176,7 +176,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Start Game
+  m_text: Tutorial Level
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -1883,7 +1883,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -50}
+  m_AnchoredPosition: {x: 0, y: -100}
   m_SizeDelta: {x: 700, y: 400}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1191057477
@@ -1908,11 +1908,11 @@ MonoBehaviour:
       m_Calls: []
   m_text: "<b>How to Play:</b>\n            \n\u2022 Use <color=yellow>\u2190 \u2192</color>
     to aim\n\u2022 Use <color=yellow>\u2191 \u2193</color> to adjust force\n\u2022
-    Press <color=yellow>SPACE</color> to launch the ball\n\u2022 Reach the <color=green>exit
-    gate</color> to escape\n\u2022 Collect <color=blue>bonus items</color> for extra
-    shots\n\u2022 Avoid <color=red>penalty items</color> that cost shots\n\u2022
-    Press <color=yellow>R</color> to adjust trajectory\n\u2022 You have <color=yellow>5
-    shots</color> to complete the level"
+    Press <color=yellow>SPACE</color> to launch the ball\n\u2022 Press <color=yellow>R</color>
+    to adjust trajectory\n\u2022 Collect <color=#00CCCC>bonus items</color> for extra
+    shots\n\u2022 Avoid <color=orange>penalty items</color> that cost shots\n\u2022
+    Avoid <color=red>obstacles</color> and reach the <color=green>exit gate</color>
+    to escape\n\u2022 You have <color=yellow>5 shots</color> to complete the level"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -1939,8 +1939,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 18
-  m_fontSizeBase: 18
+  m_fontSize: 12
+  m_fontSizeBase: 12
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -3419,7 +3419,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -100}
+  m_AnchoredPosition: {x: 0, y: -80}
   m_SizeDelta: {x: 160, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1728435191
@@ -3877,7 +3877,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 0, y: 0, z: 0, w: 0}
+  m_margin: {x: 5, y: 5, z: 5, w: 5}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0

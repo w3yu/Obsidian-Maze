@@ -16,6 +16,7 @@ public class CameraDrag2D : MonoBehaviour
     public bool followBall = true;
     public string ballTag = "Ball";
     public float ballFollowThreshold = 0.3f;  // 30% up the screen
+    public float ballFallThreshold = 0.1f;    // 10% from the bottom of the screen
     
     [Header("Bounds")]
     public bool clampToBounds = true;
@@ -189,15 +190,22 @@ public class CameraDrag2D : MonoBehaviour
         // Convert ball position to screen coordinates
         Vector3 ballScreenPos = cam.WorldToViewportPoint(ballPos);
         
-        // Check if ball is above the threshold (30% up the screen)
+        // Check if ball is above the upper threshold (30% up the screen)
         if (ballScreenPos.y >= ballFollowThreshold)
         {
-            // Calculate where camera should be to keep ball at the threshold position
+            // Calculate where camera should be to keep ball at the upper threshold position
             float targetY = ballPos.y - (cam.orthographicSize * 2f * ballFollowThreshold - cam.orthographicSize);
             return new Vector3(currentCameraPos.x, targetY, currentCameraPos.z);
         }
+        // Check if ball is below the lower threshold (10% from bottom)
+        else if (ballScreenPos.y < ballFallThreshold)
+        {
+            // Calculate where camera should be to keep ball at the lower threshold position
+            float targetY = ballPos.y - (cam.orthographicSize * 2f * ballFallThreshold - cam.orthographicSize);
+            return new Vector3(currentCameraPos.x, targetY, currentCameraPos.z);
+        }
         
-        // If ball is below threshold, don't move camera vertically
+        // If ball is within both thresholds, don't move camera vertically
         return currentCameraPos;
     }
 
