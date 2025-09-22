@@ -22,7 +22,9 @@ public class PenaltyObjectTrigger : MonoBehaviour
             if (playerLauncher != null)
             {
                 playerLauncher.shotCount--;
-                Debug.Log("Shot count decreased! New count: " + playerLauncher.shotCount);
+                playerLauncher.penaltiesHit++;
+                Debug.Log("Penalty hit! Shot count: " + playerLauncher.shotCount + 
+                         ", Total penalties: " + playerLauncher.penaltiesHit);
             }
             else
             {

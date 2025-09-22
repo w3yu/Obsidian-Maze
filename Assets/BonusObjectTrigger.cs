@@ -22,7 +22,9 @@ public class BonusObjectTrigger : MonoBehaviour
             if (playerLauncher != null)
             {
                 playerLauncher.shotCount++;
-                Debug.Log("Shot count increased! New count: " + playerLauncher.shotCount);
+                playerLauncher.bonusesCollected++;
+                Debug.Log("Bonus collected! Shot count: " + playerLauncher.shotCount + 
+                         ", Total bonuses: " + playerLauncher.bonusesCollected);
             }
             else
             {

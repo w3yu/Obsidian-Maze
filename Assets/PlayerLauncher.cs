@@ -42,6 +42,8 @@ public class PlayerLauncher : MonoBehaviour
     public Key rearmKey = Key.R;
 
     public int shotCount = 5; //shot counter max allowed
+    public int bonusesCollected = 0; // Track number of bonuses collected
+    public int penaltiesHit = 0; // Track number of penalties hit
 
     // Input (code-bound)
     private InputAction aimPowerAction;
@@ -223,5 +225,7 @@ public class PlayerLauncher : MonoBehaviour
     public void ResetShotCount()
     {
         shotCount = 5; /// reset to max allowed
+        bonusesCollected = 0;
+        penaltiesHit = 0;
     }
 }
